@@ -65,6 +65,7 @@ class RedisInfo(threading.Thread):
         while 1:
             try:
                 redis_info = self.client.info()
+                redis_keys = self.client.keys()
                 self.nowtime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S %Z")
                 # status
                 self.status['redis_server_ip'] = '%s:%s' % (self.host, self.port)
@@ -79,49 +80,63 @@ class RedisInfo(threading.Thread):
                 self.status['rdb_last_save_time'] = redis_info['rdb_last_save_time'] if 'rdb_last_save_time' in redis_info else ''
 
                 # table
-                self.table_row = []
-                # nowtime = datetime.datetime.now().strftime("%H:%M:%S")
-                self.table_row.append(self.nowtime)
-                self.used_cpu_user = redis_info['used_cpu_user']
-                self.used_cpu_sys = redis_info['used_cpu_sys']
-                self.table_row.append(self.used_cpu_user)
-                self.table_row.append(self.used_cpu_sys)
-                self.table_row.append(redis_info['connected_clients'])
-                self.table_row.append(redis_info['blocked_clients'])
-                self.mem = round(redis_info['used_memory'] / 1024 / 1024, 2)
-                self.table_row.append('%sM' % self.mem)
-                self.mem_rss = round(redis_info['used_memory_rss'] / 1024 / 1024, 2)
-                self.table_row.append('%sM' % self.mem_rss)
-                keys = sum([v['keys'] for k, v in redis_info.items() if k.startswith('db') and 'keys' in v])
-                self.table_row.append(keys)
-                if len(self.table) == 0:
-                    self.table_row.append(0)
-                    self.table_row.append(0)
-                    self.table_row.append(0)
-                    self.table_row.append(0)
-                    self.table_row.append(0)
-                else:
-                    self.commands_per_seconds = (redis_info['total_commands_processed'] - self.last_total_commands_processed) / INFO_INTERVAL
-                    self.table_row.append(self.commands_per_seconds)
-                    self.table_row.append((redis_info['expired_keys'] - self.last_expired_keys) / INFO_INTERVAL)
-                    self.table_row.append((redis_info['evicted_keys'] - self.last_evicted_keys) / INFO_INTERVAL)
-                    self.table_row.append((redis_info['keyspace_hits'] - self.last_keyspace_hits) / INFO_INTERVAL)
-                    self.table_row.append((redis_info['keyspace_misses'] - self.last_keyspace_misses) / INFO_INTERVAL)
+                if len(self.table) >= len(redis_keys):
+                    self.table=[]
+                # del self.table[:]
+                for x in redis_keys:
+                    self.table_row = []
+                    nowtime = datetime.datetime.now().strftime("%H:%M:%S")
+                    self.table_row.append(nowtime)
+                    self.table_row.append(x)
+                    if self.client.type(x)=='list':
+                        self.table_row.append(self.client.llen(x))
+                    else:
+                        self.table_row.append('hash')
+                    # print x,self.client.llen(x)
+                    self.table.append(self.table_row)
+                
 
-                self.last_total_commands_processed = redis_info['total_commands_processed']
-                self.last_expired_keys = redis_info['expired_keys']
-                self.last_evicted_keys = redis_info['evicted_keys']
-                self.last_keyspace_hits = redis_info['keyspace_hits']
-                self.last_keyspace_misses = redis_info['keyspace_misses']
-                if redis_info['aof_enabled']:
-                    self.table_row.append(redis_info['aof_current_size'])
-                else:
-                    self.table_row.append(0)
+                
+                # self.used_cpu_user = redis_info['used_cpu_user']
+                # self.used_cpu_sys = redis_info['used_cpu_sys']
+                # self.table_row.append(self.used_cpu_user)
+                # self.table_row.append(self.used_cpu_sys)
+                # self.table_row.append(redis_info['connected_clients'])
+                # self.table_row.append(redis_info['blocked_clients'])
+                # self.mem = round(redis_info['used_memory'] / 1024 / 1024, 2)
+                # self.table_row.append('%sM' % self.mem)
+                # self.mem_rss = round(redis_info['used_memory_rss'] / 1024 / 1024, 2)
+                # self.table_row.append('%sM' % self.mem_rss)
+                # keys = sum([v['keys'] for k, v in redis_info.items() if k.startswith('db') and 'keys' in v])
+                # self.table_row.append(keys)
+                # if len(self.table) == 0:
+                #     self.table_row.append(0)
+                #     self.table_row.append(0)
+                #     self.table_row.append(0)
+                #     self.table_row.append(0)
+                #     self.table_row.append(0)
+                # else:
+                #     self.commands_per_seconds = (redis_info['total_commands_processed'] - self.last_total_commands_processed) / INFO_INTERVAL
+                #     self.table_row.append(self.commands_per_seconds)
+                #     self.table_row.append((redis_info['expired_keys'] - self.last_expired_keys) / INFO_INTERVAL)
+                #     self.table_row.append((redis_info['evicted_keys'] - self.last_evicted_keys) / INFO_INTERVAL)
+                #     self.table_row.append((redis_info['keyspace_hits'] - self.last_keyspace_hits) / INFO_INTERVAL)
+                #     self.table_row.append((redis_info['keyspace_misses'] - self.last_keyspace_misses) / INFO_INTERVAL)
 
-                self.table.append(self.table_row)
-                if len(self.table) > TABLE_MAX_ROWS:
-                    self.table.pop(0)
+                # self.last_total_commands_processed = redis_info['total_commands_processed']
+                # self.last_expired_keys = redis_info['expired_keys']
+                # self.last_evicted_keys = redis_info['evicted_keys']
+                # self.last_keyspace_hits = redis_info['keyspace_hits']
+                # self.last_keyspace_misses = redis_info['keyspace_misses']
+                # if redis_info['aof_enabled']:
+                #     self.table_row.append(redis_info['aof_current_size'])
+                # else:
+                #     self.table_row.append(0)
+
+                
                 table_result = list(reversed(self.table))
+
+
                 # commands highchart
                 self.commands_chart.append({'x': self.nowtime, 'y': self.commands_per_seconds})
                 # cpu usage (system and user)
