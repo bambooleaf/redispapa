@@ -97,15 +97,15 @@ class RedisInfo(threading.Thread):
                 
 
                 
-                # self.used_cpu_user = redis_info['used_cpu_user']
-                # self.used_cpu_sys = redis_info['used_cpu_sys']
+                self.used_cpu_user = redis_info['used_cpu_user']
+                self.used_cpu_sys = redis_info['used_cpu_sys']
                 # self.table_row.append(self.used_cpu_user)
                 # self.table_row.append(self.used_cpu_sys)
                 # self.table_row.append(redis_info['connected_clients'])
                 # self.table_row.append(redis_info['blocked_clients'])
-                # self.mem = round(redis_info['used_memory'] / 1024 / 1024, 2)
+                self.mem = round(redis_info['used_memory'] / 1024 / 1024, 2)
                 # self.table_row.append('%sM' % self.mem)
-                # self.mem_rss = round(redis_info['used_memory_rss'] / 1024 / 1024, 2)
+                self.mem_rss = round(redis_info['used_memory_rss'] / 1024 / 1024, 2)
                 # self.table_row.append('%sM' % self.mem_rss)
                 # keys = sum([v['keys'] for k, v in redis_info.items() if k.startswith('db') and 'keys' in v])
                 # self.table_row.append(keys)
@@ -116,18 +116,18 @@ class RedisInfo(threading.Thread):
                 #     self.table_row.append(0)
                 #     self.table_row.append(0)
                 # else:
-                #     self.commands_per_seconds = (redis_info['total_commands_processed'] - self.last_total_commands_processed) / INFO_INTERVAL
+                self.commands_per_seconds = (redis_info['total_commands_processed'] - self.last_total_commands_processed) / INFO_INTERVAL
                 #     self.table_row.append(self.commands_per_seconds)
                 #     self.table_row.append((redis_info['expired_keys'] - self.last_expired_keys) / INFO_INTERVAL)
                 #     self.table_row.append((redis_info['evicted_keys'] - self.last_evicted_keys) / INFO_INTERVAL)
                 #     self.table_row.append((redis_info['keyspace_hits'] - self.last_keyspace_hits) / INFO_INTERVAL)
                 #     self.table_row.append((redis_info['keyspace_misses'] - self.last_keyspace_misses) / INFO_INTERVAL)
 
-                # self.last_total_commands_processed = redis_info['total_commands_processed']
-                # self.last_expired_keys = redis_info['expired_keys']
-                # self.last_evicted_keys = redis_info['evicted_keys']
-                # self.last_keyspace_hits = redis_info['keyspace_hits']
-                # self.last_keyspace_misses = redis_info['keyspace_misses']
+                self.last_total_commands_processed = redis_info['total_commands_processed']
+                self.last_expired_keys = redis_info['expired_keys']
+                self.last_evicted_keys = redis_info['evicted_keys']
+                self.last_keyspace_hits = redis_info['keyspace_hits']
+                self.last_keyspace_misses = redis_info['keyspace_misses']
                 # if redis_info['aof_enabled']:
                 #     self.table_row.append(redis_info['aof_current_size'])
                 # else:
